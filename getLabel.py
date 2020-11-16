@@ -7,7 +7,7 @@ from tqdm import tqdm
 # for multiprocessing
 from multiprocessing import Pool
 
-META_PATH = './dat/'
+META_PATH = './annotations/'
 IN_PATH = './annotations/train/'
 OUT_PATH = './annotations/'
 
