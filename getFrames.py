@@ -27,7 +27,7 @@ def getFrames():
                 if img.size == 0 :
                     continue
 
-                savePath = os.path.join(OUT_PATH, portion, str('{:04d}'.format(int(filename))), str('{:05d}'.format(str(num_frame))) + '.jpg')
+                savePath = os.path.join(OUT_PATH, portion, str('{:04d}'.format(int(filename))), str('{:05d}'.format(int(num_frame))) + '.jpg')
                 cv2.imwrite(savePath, img)
                 num_frame += 1
 

@@ -3,8 +3,8 @@ import moviepy.editor as mp
 from tqdm import tqdm
 
 IN_PATH = './video'
-os.makedirs('./audio', exist_ok=True)
-OUT_PATH = './audio'
+os.makedirs('./aud_seq', exist_ok=True)
+OUT_PATH = './aud_seq'
 
 for portion in os.listdir(IN_PATH):
     path_portion = IN_PATH + "/" + portion
