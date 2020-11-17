@@ -54,7 +54,7 @@ def face_part_extract():
                     faceRect = det.rect
                     shape = face_utils.shape_to_np(face_predictor(gray, faceRect))
 
-                    alignedFace = face_aligner.align(224, img, faceRect, landmarkIndices=openface.AlignDlib.INNER_EYES_AND_BOTTOM_LIP)
+                    alignedFace = face_aligner.align(128, img, faceRect, landmarkIndices=openface.AlignDlib.INNER_EYES_AND_BOTTOM_LIP)
                     savePath = os.path.join(OUT_PATH, portion, str('{:04d}'.format(int(filename))), str('{:05d}'.format(int(num_frame))) + '.jpg')
                     cv2.imwrite(savePath, alignedFace)
                     #num_frame += 1
