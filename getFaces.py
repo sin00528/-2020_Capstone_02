@@ -37,6 +37,8 @@ def face_part_extract():
                 if img.size == 0 :
                     continue
 
+                num_frame += 1
+                
                 # face_roi
                 rects = face_detector(img, 1)
                 for i, det in enumerate(rects):
@@ -53,9 +55,9 @@ def face_part_extract():
                     shape = face_utils.shape_to_np(face_predictor(gray, faceRect))
 
                     alignedFace = face_aligner.align(224, img, faceRect, landmarkIndices=openface.AlignDlib.INNER_EYES_AND_BOTTOM_LIP)
-                    savePath = os.path.join(OUT_PATH, portion, str('{:04d}'.format(int(filename))), str(num_frame) + '.jpg')
+                    savePath = os.path.join(OUT_PATH, portion, str('{:04d}'.format(int(filename))), str('{:05d}'.format(str(num_frame))) + '.jpg')
                     cv2.imwrite(savePath, alignedFace)
-                    num_frame += 1
+                    #num_frame += 1
 
 def main():
     face_part_extract()
