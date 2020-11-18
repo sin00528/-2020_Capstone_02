@@ -287,7 +287,6 @@ $RECYCLE.BIN/
 # remove data folders
 img_seq/
 aud_seq/
-img_seq_crop/
 video/
 annotations/train/
 

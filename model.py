@@ -18,7 +18,7 @@ import sys
 import numpy as np
 import keras.backend as K
 
-class ResearchModels():
+class VAE_GAN():
     def __init__(self, nb_classes, model, seq_length, saved_model=None, features_length=2622):
         
         """
@@ -67,13 +67,11 @@ class ResearchModels():
 
         # Now compile the network.
         #optimizer = RMSprop(lr=1e-3, decay=1e-6)
-        optimizer = Adam(lr=1e-3, decay=1e-6)
+        optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
         #optimizer = SGD(lr=1e-3) #, decay=1e-6)
 
         self.model.compile(loss='mse', optimizer=optimizer, metrics=metrics)
         print(self.model.summary())
-
-        # NOTE: Need to check models padding
 
     # models
     def encoder(self):
@@ -93,6 +91,7 @@ class ResearchModels():
         return model
 
     def decoder(self):
+        # Decoder/Generator
         inputs = Input(shape=self.input_shape)
         
         # 6 Residual blocks
@@ -109,7 +108,8 @@ class ResearchModels():
             x = Add()([x, shortcut])     
             x = Activation('relu')(x)
 
-            shortcut = x
+            if i != 5:
+                shortcut = x
         
         x = Conv2DTranspose(256, (3, 3), strides=(2, 2), padding='same', activation='relu')(x)
         x = InstanceNormalization()(x)
@@ -158,10 +158,10 @@ class ResearchModels():
         model.add(Dense(1024, activation='relu'))
         model.add(Dense(1024, activation='relu'))
 
-        model.add(Dense(self.nb_classes, activation='softmax'))
+        model.add(Dense(self.nb_classes, activation='relu'))
 
         return model
 
 # NOTE: check summary
-model = 'classifier'
-rm = ResearchModels(2, model, seq_length=1, saved_model=None)
+#model = 'decoder'
+#rm = VAE_GAN(2, model, seq_length=1, saved_model=None)
