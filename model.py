@@ -19,20 +19,18 @@ import numpy as np
 import keras.backend as K
 
 class VAE_GAN():
-    def __init__(self, nb_classes, model, seq_length, saved_model=None, features_length=2622):
+    def __init__(self, model, nb_classes=2, saved_model=None):
         
         """
         @nb_classes: the number of classes to predict
-        @seq_length: the length of our video sequences
         @saved_model: the path to a saved Keras model to load
         """
 
         # Set defaults.
-        self.seq_length = seq_length
+        self.nb_classes = nb_classes
         self.load_model = load_model
         self.saved_model = saved_model
-        self.nb_classes = nb_classes
-        self.feature_queue = deque()
+        #self.feature_queue = deque()
 
         # Set the metrics.
         metrics=['mse', 'mae']
@@ -42,22 +40,22 @@ class VAE_GAN():
             print("Loading model %s" % self.saved_model)
             self.model = load_model(self.saved_model)
         elif model == 'encoder':
-            print("Loading encoder model.")
+            print("<<===== Loading encoder model. =====>>")
             #self.input_shape = (seq_length, 128, 128, 3)
             self.input_shape = (128, 128, 3)
             self.model = self.encoder()
         elif model == 'decoder':
-            print("Loading decoder model.")
+            print("Loading decoder model. =====>>")
             #self.input_shape = (seq_length, 32, 32, 128)
             self.input_shape = (32, 32, 128)
             self.model = self.decoder()
         elif model == 'discriminator':
-            print("Loading discriminator model.")
+            print("<<===== Loading discriminator model. =====>>")
             #self.input_shape = (seq_length, 128, 128, 3)
             self.input_shape = (128, 128, 3)
             self.model = self.discriminator()
         elif model == 'classifier':
-            print("Loading classifier model.")
+            print("<<===== Loading classifier model. =====>>")
             #self.input_shape = (seq_length, 128, 128, 3)
             self.input_shape = (128, 128, 3)
             self.model = self.classifier()

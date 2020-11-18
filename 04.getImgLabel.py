@@ -14,12 +14,12 @@ label_path = os.path.join(LABEL_PATH, 'label.csv')
 label = pd.read_csv(label_path)
 
 # MAKE img_label.csv
-df = pd.DataFrame([], columns=['file_name', 'num_frame', 'valence', 'arousal'])
+df = pd.DataFrame([], columns=['file_path', 'file_name', 'num_frame', 'valence', 'arousal'])
 
 for portion in os.listdir(IMG_PATH):
-    path_portion = IMG_PATH + "/" + portion
+    path_portion = os.path.join(IMG_PATH, portion)
     for dir_name in tqdm(os.listdir(path_portion)):
-        dir_path = path_portion + "/" + dir_name
+        dir_path =  os.path.join(path_portion, dir_name)
 
         # exclude folders not in label.csv
         if not int(dir_name) in label['file_name'].unique():
@@ -27,7 +27,7 @@ for portion in os.listdir(IMG_PATH):
 
         frames = []
         for file_name in os.listdir(dir_path):
-            full_path = dir_path + "/" + file_name
+            full_path = os.path.join(dir_path, file_name)
             file_name = int(file_name.split('.')[0])
 
             # exclude img not in label.csv
@@ -38,6 +38,8 @@ for portion in os.listdir(IMG_PATH):
             
         # exclude img not in label.csv
         row = label[label['file_name'].isin([int(dir_name)]) & label['num_frame'].isin(frames)]
+        row['file_path'] = dir_path + '/' + row['num_frame'].map('{:05d}.jpg'.format)
+        #import pdb; pdb.set_trace()
         df = df.append(row, ignore_index=True)
     
     outpath = os.path.join(OUT_PATH, 'img_label.csv')
