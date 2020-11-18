@@ -288,7 +288,7 @@ $RECYCLE.BIN/
 img_seq/
 aud_seq/
 video/
-annotations/
+annotations/train/
 
 # backup folder
 backups/
