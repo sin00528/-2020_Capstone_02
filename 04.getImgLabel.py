@@ -42,5 +42,5 @@ for portion in os.listdir(IMG_PATH):
         #import pdb; pdb.set_trace()
         df = df.append(row, ignore_index=True)
     
-    outpath = os.path.join(OUT_PATH, 'img_label.csv')
-    df.to_csv(outpath, mode='w', index=False)
+outpath = os.path.join(OUT_PATH, 'img_label.csv')
+df.to_csv(outpath, mode='w', index=False)
