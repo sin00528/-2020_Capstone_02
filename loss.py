@@ -13,7 +13,7 @@ def dispel_loss(y_true, y_pred):
 
     return loss
 
-def pixel_loss(x_gen, x_real):
+def pixel_loss(x_real, x_gen):
     height = 128
     width = 128
 
