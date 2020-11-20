@@ -265,10 +265,10 @@ def train_step(dataset):
 
 
 def train(dataset, epochs):
-    for epoch in tqdm(range(epochs)):
+    for epoch in tqdm(range(epochs), desc="EPOCHS"):
         start = time.time()
 
-        for image_batch in tqdm(dataset):
+        for image_batch in tqdm(dataset, desc="BATCHES"):
             train_step(image_batch)
 
         # GIF를 위한 이미지를 바로 생성합니다.
