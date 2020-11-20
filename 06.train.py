@@ -28,7 +28,7 @@ OUT_PATH = './gan_images/'
 
 EPOCHS = 100
 RND_SEED = 42
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
 IMG_CHANNEL = 3
@@ -86,6 +86,7 @@ img_decoder = make_decoder()
 
 img_discriminator = make_discriminator()
 
+"""
 # 2.1. check encoder (Before training)
 noise = tf.random.normal([1, 128, 128, 3])
 encoded_id_image = img_id_encoder(noise, training=False)
@@ -117,6 +118,7 @@ print("decision_exp shape: ", decision_exp)
 # NOTE : discriminator provides the reconstruction loss
 real_fake_tensor = img_discriminator(decoded_image, training=False)
 print("real_fake_tensor shape: ", real_fake_tensor.shape)
+"""
 
 # 3. define loss func and optimizers
 # 3.1. loss func
@@ -192,7 +194,9 @@ checkpoint = tf.train.Checkpoint(#img_exp_encoder_optimizer=img_exp_encoder_opti
                                 img_discriminator=img_discriminator)
 
 # set seed
-seed = tf.random.normal([16, 128, 128, 3])
+x, y = next(iter(validataion_set))
+seed = x[:16]
+#seed = tf.random.normal([16, 128, 128, 3])
 
 @tf.function
 def train_step(dataset):
@@ -261,10 +265,10 @@ def train_step(dataset):
 
 
 def train(dataset, epochs):
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         start = time.time()
 
-        for image_batch in dataset:
+        for image_batch in tqdm(dataset):
             train_step(image_batch)
 
         # GIF를 위한 이미지를 바로 생성합니다.
