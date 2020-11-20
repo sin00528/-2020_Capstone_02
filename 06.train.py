@@ -31,6 +31,7 @@ RND_SEED = 42
 BATCH_SIZE = 32
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
+IMG_CHANNEL = 3
 
 ENC_IN_SHAPE = (128, 128, 3)
 DEC_IN_SHAPE = (32, 32, 128)
@@ -121,22 +122,40 @@ print("real_fake_tensor shape: ", real_fake_tensor.shape)
 # 3.1. loss func
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss helper func
 
-def cls_loss_fn(y_true, y_pred):
-    loss = tf.keras.losses.MSE(y_true, y_pred)
+def cls_id_loss_fn(y_true, y_pred):
+    #import pdb; pdb.set_trace()
+    loss = cross_entropy(y_true, y_pred)
     return loss
 
-def dispel_loss_fn(y_true, y_pred):
-    loss = tf.keras.losses.MSE(y_true, y_pred)
+def cls_exp_loss_fn(y_true, y_pred):
+    #import pdb; pdb.set_trace()
+    y_pred = tf.transpose(y_pred)
+    loss = cross_entropy(y_true, y_pred)
     return loss
+
+# def enc_id_loss_fn(y_true, y_pred):
+#     loss = cross_entropy(y_true, y_pred)
+#     return loss
 
 def pixel_loss_fn(real_img, fake_img):
+    real_img = tf.concat([real_img, real_img], axis=0)
+    #import pdb; pdb.set_trace()
+    """
     l1_distance = 0
     for i in range(IMG_HEIGHT):
         for j in range(IMG_WIDTH):
-            l1_distance += K.abs(fake_img[i][j] - real_img[i][j])
+            for k in range(IMG_CHANNEL):
+                #import pdb; pdb.set_trace()
+                l1_distance += K.abs(fake_img[:][i][j][k] - real_img[:][i][j][k])
     
-    loss = l1_distance / (IMG_HEIGHT * IMG_WIDTH)
+    loss = l1_distance / ((IMG_HEIGHT * IMG_WIDTH * IMG_CHANNEL * (BATCH_SIZE * 2)) + K.epsilon()) 
     return loss
+    """
+    real_loss = cross_entropy(tf.ones_like(real_img), real_img)
+    fake_loss = cross_entropy(tf.zeros_like(fake_img), fake_img)
+    total_loss = real_loss + fake_loss
+    return total_loss
+
 
 def d_loss_fn(real_img, fake_img):
     real_loss = cross_entropy(tf.ones_like(real_img), real_img)
@@ -145,8 +164,8 @@ def d_loss_fn(real_img, fake_img):
     return total_loss
 
 # 3.2. optimizers
-img_id_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
-img_exp_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+#img_id_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+#img_exp_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
 
 img_id_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
 img_exp_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
@@ -209,11 +228,12 @@ def train_step(dataset):
         #enc_id_loss = dispel_loss_fn(id_label, encoded_id_image)
         #enc_exp_loss = dispel_loss_fn(va_label, encoded_exp_image)
 
-        cls_id_loss = cls_loss_fn(id_label, decision_id)
+        cls_id_loss = cls_id_loss_fn(id_label, decision_id)
         # TODO : solve Dimensions error
-        cls_exp_loss = cls_loss_fn(va_label, decision_exp)
+        #import pdb; pdb.set_trace()
+        cls_exp_loss = cls_exp_loss_fn(va_label, decision_exp)
 
-        dec_loss = pixel_loss_fn(training_set, decoded_image)
+        dec_loss = pixel_loss_fn(image, decoded_image)
 
         dis_loss = d_loss_fn(real_output, fake_output)
 
