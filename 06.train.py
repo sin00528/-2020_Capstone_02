@@ -1,4 +1,5 @@
 import os
+import time
 import random
 import numpy as np
 import pandas as pd
@@ -17,6 +18,7 @@ from keras.models import Model, load_model, Sequential
 from keras.optimizers import Adam, RMSprop, SGD
 
 from model import make_encoder, make_decoder, make_discriminator, make_classifier
+
 
 # NOTE: load annotaion sample
 LABEL_PATH = './annotations/'
@@ -42,8 +44,6 @@ tf.random.set_seed(RND_SEED)
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-
-print(label)
 
 train_datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2, horizontal_flip=True)
 
@@ -75,15 +75,15 @@ test_set = test_datagen.flow_from_dataframe(label,
 """
 
 # 2. build models
-img_id_encoder = make_encoder() # loss : cls_loss, dispel_loss
-img_exp_encoder = make_encoder() # loss : cls_loss, dispel_loss
+img_id_encoder = make_encoder()
+img_exp_encoder = make_encoder()
 
-img_id_classifier = make_classifier(num_classes=1) # loss : cls_loss, dispel_loss
-img_exp_classifier = make_classifier(num_classes=2) # loss : cls_loss, dispel_loss
+img_id_classifier = make_classifier(num_classes=1)
+img_exp_classifier = make_classifier(num_classes=2)
 
-img_decoder = make_decoder() # loss : adv_loss
+img_decoder = make_decoder()
 
-img_discriminator = make_discriminator() # loss : pixel_loss
+img_discriminator = make_discriminator()
 
 # 2.1. check encoder (Before training)
 noise = tf.random.normal([1, 128, 128, 3])
@@ -97,74 +97,74 @@ print("encoded_exp_image shape: ", encoded_exp_image.shape)
 encoded_image = tf.concat([encoded_id_image, encoded_exp_image], axis=0)
 
 # 2.2. check generated img (Before training)
-generated_image = img_decoder(encoded_image, training=False)
+decoded_image = img_decoder(encoded_image, training=False)
 
-print("generated_image shape: ", generated_image.shape)
+print("decoded_image shape: ", decoded_image.shape)
 
-plt.imsave(OUT_PATH + 'gen_id.png', generated_image[0, :, :, 0])
-plt.imsave(OUT_PATH + 'gen_exp.png', generated_image[1, :, :, 0])
+plt.imsave(OUT_PATH + 'dec_id.png', decoded_image[0, :, :, 0])
+plt.imsave(OUT_PATH + 'dec_exp.png', decoded_image[1, :, :, 0])
 
-# 2.3 check discriminator works (Before training)
-# NOTE : discriminator model returns pos value(real), neg value(fake)
-#decision = discriminator(generated_image)
+# 2.3 check classifier works (Before training)
+# NOTE : classifier model returns pos value(real), neg value(fake)
 decision_id = img_id_classifier(encoded_id_image)
 decision_exp = img_exp_classifier(encoded_exp_image)
 
 print("decision_id shape: ", decision_id)
 print("decision_exp shape: ", decision_exp)
 
+# 2.4 check discriminator works (Before training)
+# NOTE : discriminator provides the reconstruction loss
+real_fake_tensor = img_discriminator(decoded_image, training=False)
+print("real_fake_tensor shape: ", real_fake_tensor.shape)
+
 # 3. define loss func and optimizers
 # 3.1. loss func
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss helper func
 
-def cls_loss(y_true, y_pred):
-    loss = cross_entropy(y_true, y_pred)
+def cls_loss_fn(y_true, y_pred):
+    loss = tf.keras.losses.MSE(y_true, y_pred)
     return loss
 
-def dispel_loss(y_true, y_pred):
-    loss = cross_entropy(y_true, y_pred)
+def dispel_loss_fn(y_true, y_pred):
+    loss = tf.keras.losses.MSE(y_true, y_pred)
     return loss
 
-def pixel_loss(x_real, x_gen):
+def pixel_loss_fn(real_img, fake_img):
     l1_distance = 0
     for i in range(IMG_HEIGHT):
         for j in range(IMG_WIDTH):
-            l1_distance += K.abs(x_gen[i][j] - x_real[i][j])
-
-    loss = l1_distance / (IMG_HEIGHT * IMG_WIDTH)
+            l1_distance += K.abs(fake_img[i][j] - real_img[i][j])
     
+    loss = l1_distance / (IMG_HEIGHT * IMG_WIDTH)
     return loss
 
-def adv_loss(y_true, y_pred):
-    # wasserstein_loss
-    loss = K.mean(y_true * y_pred)
-    return loss
-
-"""
-def discriminator_loss(x_real, x_gen):
-    real_loss = cross_entropy(tf.ones_like(x_real), x_real)
-    fake_loss = cross_entropy(tf.zeros_like(x_gen), x_gen)
+def d_loss_fn(real_img, fake_img):
+    real_loss = cross_entropy(tf.ones_like(real_img), real_img)
+    fake_loss = cross_entropy(tf.zeros_like(fake_img), fake_img)
     total_loss = real_loss + fake_loss
     return total_loss
 
-def generator_loss(fake_output):
-    return cross_entropy(tf.ones_like(fake_output), fake_output)
-"""
-
 # 3.2. optimizers
+img_id_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
 img_exp_encoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+
+img_id_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+img_exp_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+
 img_decoder_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
 img_discriminator_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
-img_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
+
 
 
 # 4. save ckpt
 checkpoint_dir = './training_checkpoints'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-checkpoint = tf.train.Checkpoint(img_exp_encoder_optimizer=img_exp_encoder_optimizer,
+checkpoint = tf.train.Checkpoint(#img_exp_encoder_optimizer=img_exp_encoder_optimizer,
+                                #img_id_encoder_optimizer=img_id_encoder_optimizer,
                                 img_decoder_optimizer=img_decoder_optimizer,
                                 img_discriminator_optimizer=img_discriminator_optimizer,
-                                img_classifier_optimizer=img_classifier_optimizer,
+                                img_id_classifier_optimizer=img_id_classifier_optimizer,
+                                img_exp_classifier_optimizer=img_exp_classifier_optimizer,
                                 img_id_encoder=img_id_encoder,
                                 img_exp_encoder=img_exp_encoder,
                                 img_id_classifier=img_id_classifier,
@@ -172,50 +172,95 @@ checkpoint = tf.train.Checkpoint(img_exp_encoder_optimizer=img_exp_encoder_optim
                                 img_decoder=img_decoder,
                                 img_discriminator=img_discriminator)
 
+# set seed
+seed = tf.random.normal([16, 128, 128, 3])
 
-# TODO : make this code work
-# 4. define train loop
 @tf.function
-def train_step(images):
-    noise = tf.random.normal([BATCH_SIZE, noise_dim])
+def train_step(dataset):
+    x, y = iter(dataset)
+    image = x
+    id_label = y[0]
+    va_label = y[1:]
+    
+    # with tf.GradientTape() as enc_id_tape, tf.GradientTape() as enc_exp_tape,\
+    #     tf.GradientTape() as cls_id_tape, tf.GradientTape() as cls_exp_tape,\
+    #     tf.GradientTape() as dec_tape, tf.GradientTape() as disc_tape:
+    with tf.GradientTape() as cls_id_tape, tf.GradientTape() as cls_exp_tape,\
+        tf.GradientTape() as dec_tape, tf.GradientTape() as disc_tape:
+        # encoders
+        encoded_id_image = img_id_encoder(image, training=True)
+        encoded_exp_image = img_exp_encoder(image, training=True)
 
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        generated_images = generator(noise, training=True)
+        # classifiers
+        decision_id = img_id_classifier(encoded_id_image, training=True)
+        decision_exp = img_exp_classifier(encoded_exp_image, training=True)
 
-        real_output = discriminator(images, training=True)
-        fake_output = discriminator(generated_images, training=True)
+        # concat encoded imgs
+        encoded_image = tf.concat([encoded_id_image, encoded_exp_image], axis=0)
+        
+        # decoders
+        decoded_image = img_decoder(encoded_image, training=True)
 
-        gen_loss = generator_loss(fake_output)
-        disc_loss = discriminator_loss(real_output, fake_output)
+        # discriminators
+        real_output = img_discriminator(image, training=True)
+        fake_output = img_discriminator(decoded_image, training=True)
 
-    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
-    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+        # losses
+        #enc_id_loss = dispel_loss_fn(id_label, encoded_id_image)
+        #enc_exp_loss = dispel_loss_fn(va_label, encoded_exp_image)
 
-    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
-    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+        cls_id_loss = cls_loss_fn(id_label, decision_id)
+        # TODO : solve Dimensions error
+        cls_exp_loss = cls_loss_fn(va_label, decision_exp)
+
+        dec_loss = pixel_loss_fn(training_set, decoded_image)
+
+        dis_loss = d_loss_fn(real_output, fake_output)
+
+    # gradients
+    #gradients_of_img_id_encoder = enc_id_tape.gradient(enc_id_loss, img_id_encoder.trainable_variables)
+    #gradients_of_img_exp_encoder = enc_exp_tape.gradient(enc_exp_loss, img_exp_encoder.trainable_variables)
+
+    gradients_of_img_id_classifier = cls_id_tape.gradient(cls_id_loss, img_id_classifier.trainable_variables)
+    gradients_of_img_exp_classifier = cls_exp_tape.gradient(cls_exp_loss, img_exp_classifier.trainable_variables)
+
+    gradients_of_img_decoder = dec_tape.gradient(dec_loss, img_decoder.trainable_variables)
+
+    gradients_of_img_discriminator = disc_tape.gradient(dis_loss, img_discriminator.trainable_variables)
+
+    # optimizers
+    #img_id_encoder_optimizer.apply_gradients(zip(gradients_of_img_id_encoder, img_id_encoder.trainable_variables))
+    #img_exp_encoder_optimizer.apply_gradients(zip(gradients_of_img_exp_encoder, img_exp_encoder.trainable_variables))
+    
+    img_id_classifier_optimizer.apply_gradients(zip(gradients_of_img_id_classifier, img_id_classifier.trainable_variables))
+    img_exp_classifier_optimizer.apply_gradients(zip(gradients_of_img_exp_classifier, img_exp_classifier.trainable_variables))
+
+    img_decoder_optimizer.apply_gradients(zip(gradients_of_img_decoder, img_decoder.trainable_variables))
+
+    img_discriminator_optimizer.apply_gradients(zip(gradients_of_img_discriminator, img_discriminator.trainable_variables))
 
 
 def train(dataset, epochs):
     for epoch in range(epochs):
-    start = time.time()
+        start = time.time()
 
-    for image_batch in dataset:
-        train_step(image_batch)
+        for image_batch in dataset:
+            train_step(image_batch)
 
-    # GIF를 위한 이미지를 바로 생성합니다.
-    display.clear_output(wait=True)
-    generate_and_save_images(generator, epoch + 1, seed)
+        # GIF를 위한 이미지를 바로 생성합니다.
+        #display.clear_output(wait=True)
+        generate_and_save_images(img_decoder, epoch + 1, seed)
 
-    # 15 에포크가 지날 때마다 모델을 저장합니다.
-    if (epoch + 1) % 15 == 0:
-        checkpoint.save(file_prefix = checkpoint_prefix)
+        # 15 에포크가 지날 때마다 모델을 저장합니다.
+        if (epoch + 1) % 15 == 0:
+            checkpoint.save(file_prefix = checkpoint_prefix)
 
-    # print (' 에포크 {} 에서 걸린 시간은 {} 초 입니다'.format(epoch +1, time.time()-start))
-    print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
+        # print (' 에포크 {} 에서 걸린 시간은 {} 초 입니다'.format(epoch +1, time.time()-start))
+        print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
 
     # 마지막 에포크가 끝난 후 생성합니다.
-    display.clear_output(wait=True)
-    generate_and_save_images(generator, epochs, seed)
+    #display.clear_output(wait=True)
+    generate_and_save_images(img_decoder, epochs, seed)
 
 def generate_and_save_images(model, epoch, test_input):
     predictions = model(test_input, training=False)
@@ -231,7 +276,7 @@ def generate_and_save_images(model, epoch, test_input):
     plt.show()
 
 # 5. model train
-train(train_dataset, EPOCHS)
+train(training_set, EPOCHS)
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 """
