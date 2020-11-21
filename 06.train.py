@@ -195,7 +195,8 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
 
 # set seed
 #seed = tf.random.normal([16, 32, 32, 128])
-x, _ = next(iter(validataion_set))
+#x, _ = next(iter(validataion_set))
+x, _ = next(iter(training_set))
 seed_img = x[:8]
 seed_encoded_id = img_id_encoder(seed_img, training=False)
 seed_encoded_exp = img_exp_encoder(seed_img, training=False)
