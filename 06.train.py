@@ -30,7 +30,7 @@ OUT_PATH = './gan_images/'
 
 EPOCHS = 100
 RND_SEED = 42
-BATCH_SIZE = 250
+BATCH_SIZE = 500
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
 IMG_CHANNEL = 3
@@ -41,20 +41,21 @@ DIS_IN_SHAPE = (128, 128, 3)
 CLS_IN_SHAPE = (32, 32, 128)
 
 random.seed(RND_SEED)
-#np.random.seed(RND_SEED)
+np.random.seed(RND_SEED)
 tf.random.set_seed(RND_SEED)
 
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-label = label[:1280]
+#label = label[:1024]
 
 def prep_fn(img):
     img = img.astype(np.float32) / 255.0
     img = (img - 0.5) * 2
     return img
 
-train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
+#train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
+train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2)
 
 training_set = train_datagen.flow_from_dataframe(label,
                                                 x_col = 'file_path',
@@ -85,25 +86,14 @@ img_discriminator = make_discriminator()
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss helper func
 
 def cls_loss_fn(y_true, y_pred):
-    #import pdb; pdb.set_trace()
     y_pred = tf.transpose(y_pred)
-    #loss = cross_entropy(y_true, y_pred)
     loss = tf.keras.losses.MSE(y_true, y_pred)
     return loss
 
 def pixel_loss_fn(real_img, fake_img):
-    # real_img = tf.concat([real_img, real_img], axis=0)
-    #import pdb; pdb.set_trace()
     l1_distance = K.abs(fake_img - real_img)
-    
     loss = l1_distance / ((IMG_HEIGHT * IMG_WIDTH * IMG_CHANNEL * (BATCH_SIZE)) + K.epsilon()) 
     return loss
-
-    # real_loss = cross_entropy(tf.ones_like(real_img), real_img)
-    # fake_loss = cross_entropy(tf.zeros_like(fake_img), fake_img)
-    # total_loss = real_loss + fake_loss
-    # return total_loss
-
 
 def d_loss_fn(real_img, fake_img):
     real_loss = cross_entropy(tf.ones_like(real_img), real_img)
@@ -192,7 +182,7 @@ def train(dataset, epochs):
         if (epoch + 1) % 15 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
-        print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
+        print ('\nTime for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
 
     # save generated images (end of epoch)
     generate_and_save_images(img_decoder, img_classifier, epochs, seed)
