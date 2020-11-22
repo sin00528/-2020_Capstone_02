@@ -200,7 +200,7 @@ def train(dataset, epochs):
         if (epoch + 1) % 5 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
-        tqdm.write('Epoch {} Loss {:.6f}'.format(epoch, cls_loss))
+        tqdm.write('Epoch {} Loss {:.6f}'.format(epoch + 1, cls_loss))
         tqdm.write('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
 
     # save generated images (end of epoch)
