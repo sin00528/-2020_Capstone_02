@@ -239,7 +239,12 @@ webhook = DiscordWebhook(url=url, content='Train Started...')
 response = webhook.execute()
 
 # 5.2 model train
-train(training_set, EPOCHS)
+try:
+    train(training_set, EPOCHS)
+except:
+    print('error occured')
+    webhook = DiscordWebhook(url=url, content='An error has occured while training...')
+    response = webhook.execute()
 
 # 5.1 send train finished msg to discord channel
 webhook = DiscordWebhook(url=url, content='Train Finished...')
