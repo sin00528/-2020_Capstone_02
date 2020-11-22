@@ -31,8 +31,8 @@ os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
 EPOCHS = 20
-RND_SEED = 42
-BATCH_SIZE = 500
+RND_SEED = 777
+BATCH_SIZE = 256
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
 IMG_CHANNEL = 3
@@ -122,7 +122,7 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
-x, _ = next(iter(training_set))
+x, _ = next(iter(validataion_set))
 seed_img = x[:36]
 seed = img_encoder(seed_img, training=False)
 
@@ -132,7 +132,7 @@ def train_step(dataset):
     image = x
     va_label = y
 
-    cls_loss = 0
+    loss = 0
     
     with tf.GradientTape() as cls_tape, tf.GradientTape() as dec_tape, tf.GradientTape() as disc_tape:
         # encoders
@@ -154,6 +154,10 @@ def train_step(dataset):
         dec_loss = pixel_loss_fn(image, decoded_image)
         dis_loss = d_loss_fn(real_output, fake_output)
 
+        loss += cls_loss
+
+    lotal_loss = (loss / len(dataset))
+
     # gradients
     gradients_of_img_classifier = cls_tape.gradient(cls_loss, img_classifier.trainable_variables)
     gradients_of_img_decoder = dec_tape.gradient(dec_loss, img_decoder.trainable_variables)
@@ -164,7 +168,7 @@ def train_step(dataset):
     img_decoder_optimizer.apply_gradients(zip(gradients_of_img_decoder, img_decoder.trainable_variables))
     img_discriminator_optimizer.apply_gradients(zip(gradients_of_img_discriminator, img_discriminator.trainable_variables))
 
-    return cls_loss
+    return lotal_loss
 
 cls_loss_plot = []
 
@@ -173,14 +177,18 @@ def train(dataset, epochs):
         start = time.time()
 
         batches = 0
-        for image_batch in tqdm(dataset, desc="BATCHES"):
-            cls_loss = train_step(image_batch)
-            batches += 1
-            
-            if batches >= len(dataset):
-                # we need to break the loop by hand because
-                # the generator loops indefinitely
-                break
+        with tqdm(total=len(dataset), desc="BATCHES") as pbar:
+            for image_batch in dataset:
+                cls_loss = train_step(image_batch)
+                batches += 1
+                pbar.update(1)
+
+                if batches >= len(dataset):
+                    # we need to break the loop by hand because
+                    # the generator loops indefinitely
+                    pbar.update(1)
+                    pbar.close()
+                    break
         
         # save each step's loss
         cls_loss_plot.append(cls_loss)
@@ -192,6 +200,7 @@ def train(dataset, epochs):
         if (epoch + 1) % 5 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
+        tqdm.write('Epoch {} Loss {:.6f}'.format(epoch, cls_loss))
         tqdm.write('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
 
     # save generated images (end of epoch)
