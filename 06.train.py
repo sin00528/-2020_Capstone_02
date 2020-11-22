@@ -27,8 +27,10 @@ LABEL_PATH = './annotations/'
 IMG_PATH = './img_seq/train/'
 os.makedirs('./gan_images/', exist_ok=True)
 OUT_PATH = './gan_images/'
+os.makedirs('./plt/', exist_ok=True)
+PLT_PATH = './plt/'
 
-EPOCHS = 100
+EPOCHS = 5
 RND_SEED = 42
 BATCH_SIZE = 500
 IMG_HEIGHT = 128
@@ -47,15 +49,15 @@ tf.random.set_seed(RND_SEED)
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-#label = label[:1024]
+label = label[:1000]
 
 def prep_fn(img):
     img = img.astype(np.float32) / 255.0
     img = (img - 0.5) * 2
     return img
 
-#train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
-train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2)
+train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
+#train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2)
 
 training_set = train_datagen.flow_from_dataframe(label,
                                                 x_col = 'file_path',
@@ -88,7 +90,7 @@ cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss help
 def cls_loss_fn(y_true, y_pred):
     y_pred = tf.transpose(y_pred)
     loss = tf.keras.losses.MSE(y_true, y_pred)
-    return loss
+    return tf.reduce_mean(loss)
 
 def pixel_loss_fn(real_img, fake_img):
     l1_distance = K.abs(fake_img - real_img)
@@ -117,6 +119,9 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
                                 img_decoder=img_decoder,
                                 img_discriminator=img_discriminator)
 
+# 4.1 load latest ckpt
+checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+
 # set seed
 #seed = tf.random.normal([16, 32, 32, 128])
 x, _ = next(iter(validataion_set))
@@ -129,6 +134,8 @@ def train_step(dataset):
     x, y = dataset
     image = x
     va_label = y
+
+    cls_loss = 0
     
     with tf.GradientTape() as cls_tape, tf.GradientTape() as dec_tape, tf.GradientTape() as disc_tape:
         # encoders
@@ -160,6 +167,9 @@ def train_step(dataset):
     img_decoder_optimizer.apply_gradients(zip(gradients_of_img_decoder, img_decoder.trainable_variables))
     img_discriminator_optimizer.apply_gradients(zip(gradients_of_img_discriminator, img_discriminator.trainable_variables))
 
+    return cls_loss
+
+cls_loss_plot = []
 
 def train(dataset, epochs):
     for epoch in tqdm(range(epochs), desc="EPOCHS"):
@@ -167,13 +177,16 @@ def train(dataset, epochs):
 
         batches = 0
         for image_batch in tqdm(dataset, desc="BATCHES"):
-            train_step(image_batch)
+            cls_loss = train_step(image_batch)
             batches += 1
             
             if batches >= len(dataset):
                 # we need to break the loop by hand because
                 # the generator loops indefinitely
                 break
+        
+        # save each step's loss
+        cls_loss_plot.append(cls_loss)
 
         # save generated images
         generate_and_save_images(img_decoder, img_classifier, epoch + 1, seed)
@@ -182,7 +195,7 @@ def train(dataset, epochs):
         if (epoch + 1) % 15 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
-        print ('\nTime for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
+        tqdm.write('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
 
     # save generated images (end of epoch)
     generate_and_save_images(img_decoder, img_classifier, epochs, seed)
@@ -210,9 +223,16 @@ def generate_and_save_images(dec_model, cls_model, epoch, test_input):
 
 # 5. model train
 train(training_set, EPOCHS)
-checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
-# 6. gen gif
+# 6. plot loss graphs
+plt.plot(cls_loss_plot, label='cls_loss')
+plt.title("Loss graph")
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend(loc='lower right')
+plt.savefig(os.path.join(PLT_PATH, 'gan_loss.png'))
+
+# 7. gen gif
 anim_file = os.path.join(OUT_PATH, 'gan.gif') 
 
 with imageio.get_writer(anim_file, mode='I') as writer:
