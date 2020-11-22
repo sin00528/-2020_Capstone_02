@@ -88,7 +88,7 @@ cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss help
 def cls_loss_fn(y_true, y_pred):
     y_pred = tf.transpose(y_pred)
     loss = tf.keras.losses.MSE(y_true, y_pred)
-    return loss
+    return tf.reduce_mean(loss)
 
 def pixel_loss_fn(real_img, fake_img):
     l1_distance = K.abs(fake_img - real_img)
@@ -126,4 +126,4 @@ seed = img_encoder(seed_img, training=False)
 
 decision = img_classifier(seed , training=False)
 
-print(tf.keras.losses.MSE(y, tf.transpose(decision)))
+print(cls_loss_fn(y, decision))

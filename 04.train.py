@@ -30,7 +30,7 @@ OUT_PATH = './gan_images/'
 os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
-EPOCHS = 5
+EPOCHS = 20
 RND_SEED = 42
 BATCH_SIZE = 500
 IMG_HEIGHT = 128
@@ -49,7 +49,7 @@ tf.random.set_seed(RND_SEED)
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-label = label[:1000]
+#label = label[:1000]
 
 def prep_fn(img):
     img = img.astype(np.float32) / 255.0
@@ -57,7 +57,6 @@ def prep_fn(img):
     return img
 
 train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
-#train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2)
 
 training_set = train_datagen.flow_from_dataframe(label,
                                                 x_col = 'file_path',
@@ -123,9 +122,7 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
-#seed = tf.random.normal([16, 32, 32, 128])
-x, _ = next(iter(validataion_set))
-#x, _ = next(iter(training_set))
+x, _ = next(iter(training_set))
 seed_img = x[:36]
 seed = img_encoder(seed_img, training=False)
 
@@ -191,8 +188,8 @@ def train(dataset, epochs):
         # save generated images
         generate_and_save_images(img_decoder, img_classifier, epoch + 1, seed)
 
-        # save model every 15 EPOCH
-        if (epoch + 1) % 15 == 0:
+        # save model every 5 EPOCH
+        if (epoch + 1) % 5 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
         tqdm.write('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
