@@ -118,8 +118,8 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
                                 img_decoder=img_decoder,
                                 img_discriminator=img_discriminator)
 
-# 4.1 load latest ckpt
-checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+# 4.1 load latest ckpt (just in case)
+#checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
 x, _ = next(iter(validataion_set))
@@ -228,7 +228,22 @@ def generate_and_save_images(dec_model, cls_model, epoch, test_input):
     #plt.show()
 
 # 5. model train
+# 5.1 send train start msg to discord channel
+import json
+with open('./secrets.json') as f:
+    key_file = json.loads(f.read())
+
+from discord_webhook import DiscordWebhook
+url = key_file["DISCORD_URL"]
+webhook = DiscordWebhook(url=url, content='Train Started...')
+response = webhook.execute()
+
+# 5.2 model train
 train(training_set, EPOCHS)
+
+# 5.1 send train finished msg to discord channel
+webhook = DiscordWebhook(url=url, content='Train Finished...')
+response = webhook.execute()
 
 # 6. plot loss graphs
 plt.plot(cls_loss_plot, label='cls_loss')
