@@ -306,4 +306,4 @@ training_checkpoints/
 gan_images/image_at_*
 
 # secrets.json file
-./secrets.json
+secrets.json
