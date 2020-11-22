@@ -298,3 +298,9 @@ dat/
 
 # vscode folder
 .vscode/
+
+# training ckpt folder
+training_checkpoints/
+
+# gan image folder
+gan_images/image_at_*
