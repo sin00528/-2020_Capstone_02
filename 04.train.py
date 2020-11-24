@@ -169,6 +169,8 @@ def train_step(dataset):
 
     return lotal_loss
 
+
+num_steps = len(training_set) // BATCH_SIZE
 score_plot = []
 
 def train(dataset, epochs):
@@ -190,7 +192,7 @@ def train(dataset, epochs):
                     break
         
         # save each step's loss
-        score_plot.append(reg_loss)
+        score_plot.append(reg_loss / num_steps)
 
         # save generated images
         generate_and_save_images(img_decoder, img_classifier, epoch + 1, seed)
