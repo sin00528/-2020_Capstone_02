@@ -1,4 +1,3 @@
-# WIP
 import os
 import time
 import random
@@ -110,5 +109,28 @@ x, y = next(iter(validataion_set))
 seed_img = x[:]
 seed = img_encoder(seed_img, training=False)
 
-decision = img_classifier(seed , training=False)
+decision = img_classifier(seed, training=False)
 print(clac_MSE(y, decision))
+
+
+# show val sample imgs
+def show_images(real_img, real_label):
+    fig = plt.figure()
+    fig.suptitle('Validation images')
+    
+    #import pdb; pdb.set_trace()
+    xlabels = ['[{} {}]'.format(np.round(real_label[0][i], 3), np.round(real_label[1][i], 3)) for i in range(real_img.shape[0])]
+    
+
+    for i in range(real_img.shape[0]):
+        ax = fig.add_subplot(6, 6, i+1)
+        ax.imshow(np.uint8(real_img[i, :, :, :] * 127.5 + 127.5))
+        ax.set_xticks([]), ax.set_yticks([])
+        ax.set_xlabel(xlabels[i], fontsize=5)
+        #plt.axis('off')
+
+    fig.tight_layout()
+    plt.savefig(os.path.join(OUT_PATH,'val_true.png'))
+    plt.close()
+
+show_images(seed_img[:36], y)
