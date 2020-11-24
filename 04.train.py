@@ -49,7 +49,7 @@ tf.random.set_seed(RND_SEED)
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-label = label[:1280]
+#label = label[:1280]
 
 def prep_fn(img):
     img = img.astype(np.float32) / 255.0
