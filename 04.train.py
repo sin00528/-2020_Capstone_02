@@ -30,7 +30,7 @@ OUT_PATH = './gan_images/'
 os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
-EPOCHS = 20
+EPOCHS = 100
 RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
@@ -228,27 +228,26 @@ def generate_and_save_images(dec_model, cls_model, epoch, test_input):
 
 # 5. model train
 # 5.1 send train start msg to discord channel
-# import json
-# with open('./secrets.json') as f:
-#     key_file = json.loads(f.read())
+import json
+with open('./secrets.json') as f:
+    key_file = json.loads(f.read())
 
-# from discord_webhook import DiscordWebhook
-# url = key_file["DISCORD_URL"]
-# webhook = DiscordWebhook(url=url, content='Train Started...')
-# response = webhook.execute()
+from discord_webhook import DiscordWebhook
+url = key_file["DISCORD_URL"]
+webhook = DiscordWebhook(url=url, content='Train Started...')
+response = webhook.execute()
 
 # 5.2 model train
-train(training_set, EPOCHS)
-# try:
-#     train(training_set, EPOCHS)
-# except:
-#     print('error occured')
-#     webhook = DiscordWebhook(url=url, content='An error has occured while training...')
-#     response = webhook.execute()
+try:
+    train(training_set, EPOCHS)
+except:
+    print('error occured')
+    webhook = DiscordWebhook(url=url, content='An error has occured while training...')
+    response = webhook.execute()
 
 # 5.1 send train finished msg to discord channel
-# webhook = DiscordWebhook(url=url, content='Train Finished...')
-# response = webhook.execute()
+webhook = DiscordWebhook(url=url, content='Train Finished...')
+response = webhook.execute()
 
 # 6. plot loss graphs
 def clac_MSE(y_true, y_pred):
