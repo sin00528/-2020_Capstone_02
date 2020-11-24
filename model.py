@@ -23,14 +23,14 @@ def make_encoder(input_shape=(128, 128, 3)):
     model.add(Conv2D(32, (7, 7), strides=(1, 1), padding='same',
         activation='relu', input_shape=input_shape))
     
-    model.add(InstanceNormalization())
+    model.add(InstanceNormalization(axis=3, center=True, scale=True))
     model.add(Conv2D(64, (3, 3), strides=(2, 2), padding='same',
         activation='relu'))
-    model.add(InstanceNormalization())
+    model.add(InstanceNormalization(axis=3, center=True, scale=True))
     model.add(Conv2D(128, (3, 3), strides=(2, 2), padding='same',
         activation='relu'))
     
-    model.add(InstanceNormalization())
+    model.add(InstanceNormalization(axis=3, center=True, scale=True))
 
     return model
 
