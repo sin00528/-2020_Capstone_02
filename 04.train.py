@@ -155,7 +155,7 @@ def train_step(dataset):
 
         loss += reg_loss
 
-    lotal_loss = (loss / len(dataset))
+    lotal_loss = loss
 
     # gradients
     gradients_of_img_classifier = cls_tape.gradient(reg_loss, img_classifier.trainable_variables)
@@ -169,8 +169,6 @@ def train_step(dataset):
 
     return lotal_loss
 
-
-num_steps = len(training_set) // BATCH_SIZE
 score_plot = []
 
 def train(dataset, epochs):
@@ -192,7 +190,7 @@ def train(dataset, epochs):
                     break
         
         # save each step's loss
-        score_plot.append(reg_loss / num_steps)
+        score_plot.append(reg_loss)
 
         # save generated images
         generate_and_save_images(img_decoder, img_classifier, epoch + 1, seed)
