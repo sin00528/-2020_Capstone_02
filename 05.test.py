@@ -1,4 +1,3 @@
-# WIP
 import os
 import time
 import random
@@ -30,7 +29,7 @@ os.makedirs('./gan_images/', exist_ok=True)
 OUT_PATH = './gan_images/'
 
 EPOCHS = 200
-RND_SEED = 42
+RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
@@ -48,14 +47,14 @@ tf.random.set_seed(RND_SEED)
 # 1. load dataset
 label_path = os.path.join(LABEL_PATH, 'img_label.csv')
 label = pd.read_csv(label_path)
-label = label[:1024]
+#label = label[:1024]
 
 def prep_fn(img):
     img = img.astype(np.float32) / 255.0
     img = (img - 0.5) * 2
     return img
 
-train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2)
+train_datagen = ImageDataGenerator(preprocessing_function=prep_fn, validation_split=0.2, horizontal_flip=True)
 
 training_set = train_datagen.flow_from_dataframe(label,
                                                 x_col = 'file_path',
@@ -82,24 +81,10 @@ img_decoder = make_decoder()
 img_discriminator = make_discriminator()
 
 # 3. define loss func and optimizers
-# 3.1. loss func
-cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True) # loss helper func
-
-def cls_loss_fn(y_true, y_pred):
+def clac_MSE(y_true, y_pred):
     y_pred = tf.transpose(y_pred)
     loss = tf.keras.losses.MSE(y_true, y_pred)
     return tf.reduce_mean(loss)
-
-def pixel_loss_fn(real_img, fake_img):
-    l1_distance = K.abs(fake_img - real_img)
-    loss = l1_distance / ((IMG_HEIGHT * IMG_WIDTH * IMG_CHANNEL * (BATCH_SIZE)) + K.epsilon()) 
-    return loss
-
-def d_loss_fn(real_img, fake_img):
-    real_loss = cross_entropy(tf.ones_like(real_img), real_img)
-    fake_loss = cross_entropy(tf.zeros_like(fake_img), fake_img)
-    total_loss = real_loss + fake_loss
-    return total_loss
 
 # 3.2. optimizers
 img_classifier_optimizer = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999)
@@ -121,9 +106,31 @@ checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
 x, y = next(iter(validataion_set))
-seed_img = x[:BATCH_SIZE]
+seed_img = x[:]
 seed = img_encoder(seed_img, training=False)
 
-decision = img_classifier(seed , training=False)
+decision = img_classifier(seed, training=False)
+print(clac_MSE(y, decision))
 
-print(cls_loss_fn(y, decision))
+
+# show val sample imgs
+def show_images(real_img, real_label):
+    fig = plt.figure()
+    fig.suptitle('Validation images')
+    
+    #import pdb; pdb.set_trace()
+    xlabels = ['[{} {}]'.format(np.round(real_label[0][i], 3), np.round(real_label[1][i], 3)) for i in range(real_img.shape[0])]
+    
+
+    for i in range(real_img.shape[0]):
+        ax = fig.add_subplot(6, 6, i+1)
+        ax.imshow(np.uint8(real_img[i, :, :, :] * 127.5 + 127.5))
+        ax.set_xticks([]), ax.set_yticks([])
+        ax.set_xlabel(xlabels[i], fontsize=5)
+        #plt.axis('off')
+
+    fig.tight_layout()
+    plt.savefig(os.path.join(OUT_PATH,'val_true.png'))
+    plt.close()
+
+show_images(seed_img[:36], y)
