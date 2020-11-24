@@ -30,7 +30,7 @@ OUT_PATH = './gan_images/'
 os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
-EPOCHS = 100
+EPOCHS = 50
 RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
@@ -145,7 +145,6 @@ def train_step(dataset):
         decoded_image = img_decoder(encoded_image, training=True)
 
         # discriminators
-        #image += 0.05 * np.random.random(image.shape)
         real_output = img_discriminator(image, training=True)
         fake_output = img_discriminator(decoded_image, training=True)
 
