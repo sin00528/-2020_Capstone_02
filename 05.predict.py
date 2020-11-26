@@ -86,6 +86,24 @@ def prep_fn(img):
     img = (img - 0.5) * 2
     return img
 
+"""
+def emotion_txt(pred):
+    # pred[0] : v
+    # pred[1] : a
+    emotion = ''
+    if pred[0] > 0:
+        if pred[1] > 0:
+            emotion = 'happy'
+        else:
+            emotion = 'comfort'
+    else:
+        if pred[1] > 0:
+            emotion = 'anxious'
+        else:
+            emotion = 'bored'
+    return emotion
+"""
+
 frames = []
 num_frame = 1
 for frame in vid:
@@ -119,8 +137,9 @@ for frame in vid:
         decision = img_classifier(encoded_image, training=False)
 
         # write bbox and v/a value every frames
-        cv2.rectangle(rgb, (l, t), (r, b), (0, 255, 0), 2)
+        cv2.rectangle(rgb, (l, t), (r, b), (0, 255, 0), thickness=1)
         txt = '{}'.format(np.round(decision[0], 3))
+        #txt = '{} : {}'.format(np.round(decision[0], 3), emotion_txt(decision[0]))
         cv2.putText(rgb, txt, (l, t), 0, 0.5, (255, 0, 0), thickness=2)
         frames.append(rgb)
         

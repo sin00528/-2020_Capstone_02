@@ -307,3 +307,6 @@ gan_images/image_at_*
 
 # secrets.json file
 secrets.json
+
+# nohup.out file
+nohup.out
