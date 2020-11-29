@@ -66,17 +66,19 @@ validataion_set = train_datagen.flow_from_dataframe(label,
                                                 subset='validation')
 
 # model
-#base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
-base_model = VGG19(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
-#base_model = VGG16(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
-x = base_model.output
-x = Flatten()(x)
-x = Dense(2)(x)
-max = 1
-min = -1
-predictions = Lambda(lambda x: (x - min) / (max - min))(x)
-
-model = Model(inputs=base_model.input, outputs=predictions)
+tf.debugging.set_log_device_placement(True)
+with tf.device('/device:GPU:1'):
+    #base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
+    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
+    #base_model = VGG16(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
+    x = base_model.output
+    x = Flatten()(x)
+    x = Dense(2)(x)
+    max = 1
+    min = -1
+    predictions = Lambda(lambda x: (x - min) / (max - min))(x)
+    
+    model = Model(inputs=base_model.input, outputs=predictions)
 
 model.summary()
 
