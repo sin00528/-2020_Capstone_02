@@ -30,7 +30,8 @@ OUT_PATH = './gan_images/'
 os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
-EPOCHS = 50
+#EPOCHS = 50
+EPOCHS = 15 # 35 epochs done, 15 epoch remain
 RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
@@ -119,7 +120,7 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
                                 img_discriminator=img_discriminator)
 
 # 4.1 load latest ckpt (just in case)
-#checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
 x, _ = next(iter(validataion_set))
