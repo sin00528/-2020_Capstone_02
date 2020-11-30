@@ -30,8 +30,7 @@ OUT_PATH = './gan_images/'
 os.makedirs('./plt/', exist_ok=True)
 PLT_PATH = './plt/'
 
-#EPOCHS = 50
-EPOCHS = 15 # 35 epochs done, 15 epoch remain
+EPOCHS = 50
 RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
@@ -123,7 +122,7 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
-x, _ = next(iter(validataion_set))
+x, y_true = next(iter(validataion_set))
 seed_img = x[:36]
 seed = img_encoder(seed_img, training=False)
 
@@ -305,4 +304,4 @@ def show_images(real_img, real_label):
     plt.savefig(os.path.join(OUT_PATH,'val_true.png'))
     plt.close()
 
-show_images(seed_img[:36], y)
+show_images(seed_img[:36], y_true)

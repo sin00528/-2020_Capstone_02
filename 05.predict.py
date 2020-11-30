@@ -11,17 +11,9 @@ import matplotlib.pyplot as plt
 import keras
 import keras.backend as K
 import tensorflow as tf
-from tensorflow_addons.layers import InstanceNormalization
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import Dense, Flatten, Dropout, BatchNormalization
-from keras.layers import Input, Reshape, LeakyReLU, ZeroPadding2D, Activation, Add
-from keras.layers.convolutional import Conv2D, MaxPooling3D, Conv3D, MaxPooling2D, Conv2DTranspose
-from keras.models import Model, load_model, Sequential
-from keras.optimizers import Adam, RMSprop, SGD
-
+from keras.optimizers import Adam
 from model import make_encoder, make_decoder, make_discriminator, make_classifier
 
-EPOCHS = 200
 RND_SEED = 777
 BATCH_SIZE = 256
 IMG_HEIGHT = 128
@@ -140,7 +132,7 @@ for frame in vid:
         cv2.rectangle(rgb, (l, t), (r, b), (0, 255, 0), thickness=1)
         txt = '{}'.format(np.round(decision[0], 3))
         #txt = '{} : {}'.format(np.round(decision[0], 3), emotion_txt(decision[0]))
-        cv2.putText(rgb, txt, (l, t), 0, 0.5, (255, 0, 0), thickness=2)
+        cv2.putText(rgb, txt, (l, t), 0, 1, (255, 0, 0), thickness=2)
         frames.append(rgb)
         
 skvideo.io.vwrite(OUT_PATH, frames)
