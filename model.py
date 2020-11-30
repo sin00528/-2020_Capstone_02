@@ -1,13 +1,10 @@
 import keras
 import tensorflow as tf
 
-from keras.layers import Dense, Flatten, Dropout, BatchNormalization
+from keras.layers import Dense, Flatten, Dropout, BatchNormalization, Lambda
 from keras.layers import Input, Reshape, LeakyReLU, ZeroPadding2D, Activation, Add
 from keras.layers.convolutional import Conv2D, MaxPooling3D, Conv3D, MaxPooling2D, Conv2DTranspose
-from keras.layers.recurrent import LSTM
-from keras.layers.wrappers import TimeDistributed
 from keras.optimizers import Adam, RMSprop, SGD
-from keras.layers.wrappers import TimeDistributed
 from keras.losses import categorical_crossentropy
 from keras.models import Model, load_model, Sequential
 from collections import deque
@@ -103,5 +100,9 @@ def make_classifier(num_classes, input_shape=(32, 32, 128)):
     model.add(Dense(1024, activation='relu'))
 
     model.add(Dense(num_classes))
+
+    max = 1
+    min = -1
+    model.add(Lambda(lambda x: (x - min) / (max - min)))
 
     return model
