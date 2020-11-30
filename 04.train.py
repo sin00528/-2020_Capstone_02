@@ -119,10 +119,10 @@ checkpoint = tf.train.Checkpoint(img_decoder_optimizer=img_decoder_optimizer,
                                 img_discriminator=img_discriminator)
 
 # 4.1 load latest ckpt (just in case)
-#checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # set seed
-x, _ = next(iter(validataion_set))
+x, y_true = next(iter(validataion_set))
 seed_img = x[:36]
 seed = img_encoder(seed_img, training=False)
 
@@ -155,7 +155,7 @@ def train_step(dataset):
 
         loss += reg_loss
 
-    lotal_loss = (loss / len(dataset))
+    lotal_loss = loss
 
     # gradients
     gradients_of_img_classifier = cls_tape.gradient(reg_loss, img_classifier.trainable_variables)
@@ -304,4 +304,4 @@ def show_images(real_img, real_label):
     plt.savefig(os.path.join(OUT_PATH,'val_true.png'))
     plt.close()
 
-show_images(seed_img[:36], y)
+show_images(seed_img[:36], y_true)
