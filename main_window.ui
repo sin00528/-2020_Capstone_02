@@ -92,7 +92,7 @@
     </widget>
     <widget class="QCheckBox" name="checkBox_2">
      <property name="text">
-      <string>BBox</string>
+      <string>BBoxs</string>
      </property>
     </widget>
     <widget class="QCheckBox" name="checkBox_3">
